@@ -1219,6 +1219,10 @@ namespace DOL.GS.Commands
 
 			info.Add(" + Class: " + targetMob.GetType().ToString());
 			info.Add(" + Realm: " + GlobalConstants.RealmToName(targetMob.Realm));
+
+			if (targetMob.Faction != null)
+				info.Add($" + Faction: {targetMob.Faction.Name} [{targetMob.Faction.ID}]");
+
 			info.Add(" + Level: " + targetMob.Level);
 			info.Add(" + Brain: " + (targetMob.Brain == null ? "(null)" : targetMob.Brain.GetType().ToString()));
 
@@ -1303,6 +1307,10 @@ namespace DOL.GS.Commands
 			info.Add(" + " + targetMob.Intelligence + " (" + targetMob.GetModified(eProperty.Intelligence) + ")  /  " + targetMob.Empathy + " (" + targetMob.GetModified(eProperty.Empathy) + ")  /  " + targetMob.Piety + " (" + targetMob.GetModified(eProperty.Piety) + ")  /  " + targetMob.Charisma + " (" + targetMob.GetModified(eProperty.Charisma) + ")");
 			info.Add(" + Block / Parry / Evade %:  " + targetMob.BlockChance + " / " + targetMob.ParryChance + " / " + targetMob.EvadeChance);
 			info.Add(" + Attack Speed (Melee Speed Increase %):  " + targetMob.AttackSpeed(targetMob.AttackWeapon) + " (" + (100 - targetMob.GetModified(eProperty.MeleeSpeed)) + ")");
+
+			if (targetMob.GetModified(eProperty.MeleeDamage) != 0)
+				info.Add($" + Damage Bonus: {targetMob.GetModified(eProperty.MeleeDamage)}");
+
 			info.Add(" + Casting Speed Increase %:  " + targetMob.GetModified(eProperty.CastingSpeed));
 
 			if (targetMob.LeftHandSwingChance > 0)
@@ -1432,6 +1440,12 @@ namespace DOL.GS.Commands
 			info.Add("");
 			info.Add("Miscellaneous:");
 			info.Add("");
+
+			if (targetMob.GetModified(eProperty.MeleeDamage) != 0)
+				info.Add($" + Damage Bonus: {targetMob.GetModified(eProperty.MeleeDamage)}");
+
+			info.Add(" + Attack Speed (Melee Speed Increase %):  " + targetMob.AttackSpeed(targetMob.AttackWeapon) + " (" + (100 - targetMob.GetModified(eProperty.MeleeSpeed)) + ")");
+
 			info.Add(String.Format("Maximum Health: {0}", targetMob.MaxHealth));
 			info.Add(String.Format("Armor Factor (AF): {0}", targetMob.GetModified(eProperty.ArmorFactor)));
 			info.Add(String.Format("Absorption (ABS): {0}", targetMob.GetModified(eProperty.ArmorAbsorption)));
@@ -1496,8 +1510,7 @@ namespace DOL.GS.Commands
 			try
 			{
 				level = Convert.ToByte(args[2]);
-				targetMob.Level = level;
-				targetMob.AutoSetStats();
+				targetMob.Level = level; // Also calls AutoSetStats()
 				targetMob.SaveIntoDatabase();
 				client.Out.SendMessage("Mob level changed to: " + targetMob.Level + " and stats adjusted", eChatType.CT_System, eChatLoc.CL_SystemWindow);
 			}
@@ -2504,7 +2517,11 @@ namespace DOL.GS.Commands
 			}
 
 			// Load NPCTemplate before overriding NPCTemplate's variables
-			mob.LoadTemplate(targetMob.NPCTemplate);
+			//Kataract : Added a control to avoid an ingame error while copying reloaded mobs
+			if (targetMob.NPCTemplate != null && targetMob.NPCTemplate.TemplateId != 0)
+			{
+				mob.LoadTemplate(targetMob.NPCTemplate);
+			}
 
 			//Fill the object variables
 			mob.X = client.Player.X;

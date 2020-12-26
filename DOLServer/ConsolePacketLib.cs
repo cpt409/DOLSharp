@@ -84,7 +84,7 @@ namespace DOLGameServerConsole
 		public void SendPingReply(ulong timestamp, ushort sequence) { }
 		public void SendRealm(eRealm realm) { }
 		public void SendCharacterOverview(eRealm realm) { }
-		public void SendDupNameCheckReply(string name, bool nameExists) { }
+		public void SendDupNameCheckReply(string name, byte nameExists) { }
 		public void SendBadNameCheckReply(string name, bool bad) { }
 		public void SendAttackMode(bool attackState) { }
 		public void SendCharCreateReply(string name) { }
@@ -130,8 +130,8 @@ namespace DOLGameServerConsole
 		public void SendQuestRewardWindow(GameNPC questNPC, GamePlayer player, DataQuest quest) { }
 		public void SendQuestAbortCommand(GameNPC abortingNPC, ushort questid, string abortMessage) { }
 		public void SendGroupWindowUpdate() { }
-		public void SendGroupMemberUpdate(bool updateIcons, GameLiving living) { }
-		public void SendGroupMembersUpdate(bool updateIcons) { }
+		public void SendGroupMemberUpdate(bool updateIcons, bool updateMap, GameLiving living) { }
+		public void SendGroupMembersUpdate(bool updateIcons, bool updateMap) { }
 		public void SendInventoryItemsUpdate(ICollection<InventoryItem> itemsToUpdate) { }
 		public void SendInventorySlotsUpdate(ICollection<int> slots) { }
 		public void SendInventoryItemsUpdate(eInventoryWindowType windowType, ICollection<InventoryItem> itemsToUpdate) { }
@@ -168,6 +168,7 @@ namespace DOLGameServerConsole
 		public void SendWeather(uint x, uint width, ushort speed, ushort fogdiffusion, ushort intensity) { }
 		public void SendPlayerModelTypeChange(GamePlayer player, byte modelType) { }
 		public void SendObjectDelete(GameObject obj) { }
+		public void SendObjectDelete(ushort oid) { }
 		public void SendObjectUpdate(GameObject obj) { }
 		public void SendObjectRemove(GameObject obj) { }
 		public void SendObjectCreate(GameObject obj) { }

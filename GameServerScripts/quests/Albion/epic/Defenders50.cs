@@ -97,7 +97,15 @@ namespace DOL.GS.Quests.Albion
 
 			GameNPC[] npcs = WorldMgr.GetNPCsByName("Lidmann Halsey", eRealm.Albion);
 
-			if (npcs.Length == 0)
+			if (npcs.Length > 0)
+				foreach (GameNPC npc in npcs)
+					if (npc.CurrentRegionID == 1 && npc.X == 466464 && npc.Y == 634554)
+					{
+						Lidmann = npc;
+						break;
+					}
+
+			if (Lidmann == null)
 			{
 
 				Lidmann = new GameNPC();
@@ -123,13 +131,19 @@ namespace DOL.GS.Quests.Albion
 				}
 
 			}
-			else
-				Lidmann = npcs[0];
 			// end npc
 
 			npcs = WorldMgr.GetNPCsByName("Cailleach Uragaig", eRealm.None);
 
-			if (npcs.Length == 0)
+			if (npcs.Length > 0)
+				foreach (GameNPC npc in npcs)
+					if (npc.CurrentRegionID == 1 && npc.X == 316218 && npc.Y == 664484)
+					{
+						Uragaig = npc;
+						break;
+					}
+
+			if (Uragaig == null)
 			{
 				if (log.IsWarnEnabled)
 					log.Warn("Could not find Uragaig , creating it ...");
@@ -152,8 +166,6 @@ namespace DOL.GS.Quests.Albion
 				}
 
 			}
-			else
-				Uragaig = npcs[0];
 			// end npc
 
 			#endregion
@@ -1248,8 +1260,17 @@ namespace DOL.GS.Quests.Albion
 			if (player == null)
 				return;
 
-			if(Lidmann.CanGiveQuest(typeof (Defenders_50), player)  <= 0)
+			if (Lidmann.CanGiveQuest(typeof(Defenders_50), player) <= 0)
 				return;
+
+			// player is not allowed to start this quest until the quest rewards are available
+			if (player.CharacterClass.ID == (byte)eCharacterClass.MaulerAlb &&
+				(MaulerAlbEpicArms == null || MaulerAlbEpicBoots == null || MaulerAlbEpicGloves == null ||
+				MaulerAlbEpicHelm == null || MaulerAlbEpicLegs == null || MaulerAlbEpicVest == null))
+			{
+				Lidmann.SayTo(player, "This quest is not available to Maulers yet.");
+				return;
+			}
 
 			//We also check if the player is already doing the quest
 			Defenders_50 quest = player.IsDoingQuest(typeof (Defenders_50)) as Defenders_50;
@@ -1429,15 +1450,6 @@ namespace DOL.GS.Quests.Albion
 
             if (Step == 2 && e == GamePlayerEvent.GiveItem)
             {
-                // Graveen: if not existing maulerepic in DB
-                // player is not allowed to finish this quest until we fix this problem
-                if (MaulerAlbEpicArms == null || MaulerAlbEpicBoots == null || MaulerAlbEpicGloves == null ||
-                    MaulerAlbEpicHelm == null || MaulerAlbEpicLegs == null || MaulerAlbEpicVest == null)
-                    {
-                    Lidmann.SayTo(player, "Dark forces are still voiding this quest, your armor is not ready.");
-                    return;
-                }
-
                 GiveItemEventArgs gArgs = (GiveItemEventArgs)args;
 				if (gArgs.Target.Name == Lidmann.Name && gArgs.Item.Id_nb == sealed_pouch.Id_nb)
 				{

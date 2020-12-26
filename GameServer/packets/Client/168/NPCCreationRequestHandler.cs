@@ -25,12 +25,23 @@ namespace DOL.GS.PacketHandler.Client.v168
 	{
 		public void HandlePacket(GameClient client, GSPacketIn packet)
 		{
-			ushort id = packet.ReadShort();
-//			GameNPC npc = (GameNPC)WorldMgr.GetObjectTypeByIDFromRegion(client.Player.CurrentRegionID, id, typeof(GameNPC));
-			if(client.Player==null) return;
+			if (client.Player == null)
+				return;
 			Region region = client.Player.CurrentRegion;
-			if (region == null) return;
+			if (region == null)
+				return;
+
+			ushort id;
+			if (client.Version >= GameClient.eClientVersion.Version1126)
+				id = packet.ReadShortLowEndian(); // Dre: disassembled game.dll show a write of uint, is it a wip in the game.dll?
+			else
+				id = packet.ReadShort();
 			GameNPC npc = region.GetObject(id) as GameNPC;
+			if (npc == null || !client.Player.IsWithinRadius(npc, WorldMgr.OBJ_UPDATE_DISTANCE))
+			{
+				client.Out.SendObjectDelete(id);
+				return;
+			}
 
 			if(npc != null)
 			{

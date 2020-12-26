@@ -24,6 +24,7 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 
+using DOL.AI;
 using DOL.AI.Brain;
 using DOL.Database;
 using DOL.Events;
@@ -177,7 +178,7 @@ namespace DOL.GS
 		/// <summary>
 		/// Returns the PacketSender for this player
 		/// </summary>
-		public IPacketLib Out
+		public virtual IPacketLib Out
 		{
 			get { return Client.Out; }
 		}
@@ -1077,7 +1078,7 @@ namespace DOL.GS
 		/// <summary>
 		/// Reset and Restart Combat Timer
 		/// </summary>
-		protected void ResetInCombatTimer()
+		protected virtual void ResetInCombatTimer()
 		{
 			lock (m_CombatTimerLock)
 			{
@@ -2683,57 +2684,44 @@ namespace DOL.GS
 		/// Calculates fall damage taking fall damage reduction bonuses into account
 		/// </summary>
 		/// <returns></returns>
-		public virtual void CalcFallDamage(int fallDamagePercent)
+		public virtual double CalcFallDamage(int fallDamagePercent)
 		{
-			if (fallDamagePercent > 0)
+			if (fallDamagePercent <= 0)
+				return 0;
+
+			int safeFallLevel = GetAbilityLevel(Abilities.SafeFall);
+			int mythSafeFall = GetModified(eProperty.MythicalSafeFall);
+
+			if (mythSafeFall > 0 & mythSafeFall < fallDamagePercent)
 			{
-				int safeFallLevel = GetAbilityLevel(Abilities.SafeFall);
-				int mythSafeFall = GetModified(eProperty.MythicalSafeFall);
-
-				if (mythSafeFall > 0 & mythSafeFall < fallDamagePercent)
-				{
-					Client.Out.SendMessage(LanguageMgr.GetTranslation(Client.Account.Language, "PlayerPositionUpdateHandler.MythSafeFall"),
-					                       eChatType.CT_Damaged, eChatLoc.CL_SystemWindow);
-					fallDamagePercent = mythSafeFall;
-					Out.SendMessage(LanguageMgr.GetTranslation(Client.Account.Language, "PlayerPositionUpdateHandler.FallPercent", fallDamagePercent),
-					                eChatType.CT_Damaged, eChatLoc.CL_SystemWindow);
-				}
-				if (safeFallLevel > 0 & mythSafeFall == 0)
-				{
-					Out.SendMessage(LanguageMgr.GetTranslation(Client.Account.Language, "PlayerPositionUpdateHandler.SafeFall"),
-					                eChatType.CT_Damaged, eChatLoc.CL_SystemWindow);
-				}
-				if (mythSafeFall == 0)
-				{
-					Out.SendMessage(LanguageMgr.GetTranslation(Client.Account.Language, "PlayerPositionUpdateHandler.FallPercent", fallDamagePercent),
-					                eChatType.CT_Damaged, eChatLoc.CL_SystemWindow);
-				}
-
-				Endurance -= MaxEndurance * fallDamagePercent / 100;
-				double damage = (0.01 * fallDamagePercent * (MaxHealth - 1));
-
-				// [Freya] Nidel: CloudSong falling damage reduction
-				GameSpellEffect cloudSongFall = SpellHandler.FindEffectOnTarget(this, "CloudsongFall");
-				if (cloudSongFall != null)
-				{
-					damage -= (damage * cloudSongFall.Spell.Value) * 0.01;
-				}
-
-				//Mattress: SafeFall property for Mythirians, the value of the MythicalSafeFall property represents the percent damage taken in a fall.
-				if (mythSafeFall != 0 && damage > mythSafeFall)
-				{
-					damage = ((MaxHealth - 1) * (mythSafeFall * 0.01));
-				}
-
-				TakeDamage(null, eDamageType.Falling, (int)damage, 0);
-
-				//Update the player's health to all other players around
-				foreach (GamePlayer player in GetPlayersInRadius(WorldMgr.VISIBILITY_DISTANCE))
-					Out.SendCombatAnimation(null, Client.Player, 0, 0, 0, 0, 0, HealthPercent);
-
-				return;
+				Client.Out.SendMessage(LanguageMgr.GetTranslation(Client.Account.Language, "PlayerPositionUpdateHandler.MythSafeFall"), eChatType.CT_Damaged, eChatLoc.CL_SystemWindow);
+				fallDamagePercent = mythSafeFall;
+				Out.SendMessage(LanguageMgr.GetTranslation(Client.Account.Language, "PlayerPositionUpdateHandler.FallPercent", fallDamagePercent), eChatType.CT_Damaged, eChatLoc.CL_SystemWindow);
 			}
-			return;
+			if (safeFallLevel > 0 & mythSafeFall == 0)
+				Out.SendMessage(LanguageMgr.GetTranslation(Client.Account.Language, "PlayerPositionUpdateHandler.SafeFall"), eChatType.CT_Damaged, eChatLoc.CL_SystemWindow);
+			if (mythSafeFall == 0)
+				Out.SendMessage(LanguageMgr.GetTranslation(Client.Account.Language, "PlayerPositionUpdateHandler.FallPercent", fallDamagePercent), eChatType.CT_Damaged, eChatLoc.CL_SystemWindow);
+
+			Endurance -= MaxEndurance * fallDamagePercent / 100;
+			double damage = (0.01 * fallDamagePercent * (MaxHealth - 1));
+
+			// [Freya] Nidel: CloudSong falling damage reduction
+			GameSpellEffect cloudSongFall = SpellHandler.FindEffectOnTarget(this, "CloudsongFall");
+			if (cloudSongFall != null)
+				damage -= (damage * cloudSongFall.Spell.Value) * 0.01;
+
+			//Mattress: SafeFall property for Mythirians, the value of the MythicalSafeFall property represents the percent damage taken in a fall.
+			if (mythSafeFall != 0 && damage > mythSafeFall)
+				damage = ((MaxHealth - 1) * (mythSafeFall * 0.01));
+
+			TakeDamage(null, eDamageType.Falling, (int)damage, 0);
+
+			//Update the player's health to all other players around
+			foreach (GamePlayer player in GetPlayersInRadius(WorldMgr.VISIBILITY_DISTANCE))
+				Out.SendCombatAnimation(null, Client.Player, 0, 0, 0, 0, 0, HealthPercent);
+
+			return damage;
 		}
 
 		#endregion
@@ -3228,6 +3216,17 @@ namespace DOL.GS
 				specLine.Level = (int)Math.Floor((double)Level / 4);
 			}
 			else specLine.Level = 1;
+
+			// If BD subpet spells scaled and capped by BD spec, respecing a spell line
+			//	requires re-scaling the spells for all subpets from that line.
+			if (CharacterClass is CharacterClassBoneDancer
+				&& DOL.GS.ServerProperties.Properties.PET_SCALE_SPELL_MAX_LEVEL > 0
+				&& DOL.GS.ServerProperties.Properties.PET_CAP_BD_MINION_SPELL_SCALING_BY_SPEC
+				&& ControlledBrain is IControlledBrain brain && brain.Body is GamePet pet
+				&& pet.ControlledNpcList != null)
+					foreach (ABrain subBrain in pet.ControlledNpcList)
+						if (subBrain != null && subBrain.Body is BDSubPet subPet && subPet.PetSpecLine == specLine.KeyName)
+							subPet.SortSpells();
 
 			return specPoints;
 		}
@@ -4539,6 +4538,17 @@ namespace DOL.GS
 			53714390,	// for level 118
 			59622973,	// for level 119
 			66181501,	// for level 120
+			73461466,	// for level 121
+			81542227,	// for level 122
+			90511872,	// for level 123
+			100468178,	// for level 124
+			111519678,	// for level 125
+			123786843,	// for level 126
+			137403395,	// for level 127
+			152517769,	// for level 128
+			169294723,	// for level 129
+			187917143,	// for level 130
+
 		};
 
 		/// <summary>
@@ -5231,6 +5241,27 @@ namespace DOL.GS
 				Task.SaveIntoDatabase();
 			}
 			
+			// Level up pets and subpets
+			if (DOL.GS.ServerProperties.Properties.PET_LEVELS_WITH_OWNER &&
+				ControlledBrain is ControlledNpcBrain brain && brain.Body is GamePet pet)
+			{
+				if (pet.SetPetLevel())
+				{
+					if (DOL.GS.ServerProperties.Properties.PET_SCALE_SPELL_MAX_LEVEL > 0 && pet.Spells.Count > 0)
+						pet.SortSpells();
+
+					brain.UpdatePetWindow();
+				}
+
+				// subpets
+				if (pet.ControlledNpcList != null)
+					foreach (ABrain subBrain in pet.ControlledNpcList)
+						if (subBrain != null && subBrain.Body is GamePet subPet)
+							if (subPet.SetPetLevel()) // Levels up subpet
+								if (DOL.GS.ServerProperties.Properties.PET_SCALE_SPELL_MAX_LEVEL > 0)
+									subPet.SortSpells();
+			}
+
 			// save player to database
 			SaveIntoDatabase();
 		}
@@ -7163,14 +7194,16 @@ namespace DOL.GS
 		/// <returns></returns>
 		public override bool CanCastInCombat(Spell spell)
 		{
-			if (CharacterClass is PlayerClass.ClassVampiir ||
-			    CharacterClass is PlayerClass.ClassMaulerAlb ||
-			    CharacterClass is PlayerClass.ClassMaulerMid ||
-			    CharacterClass is PlayerClass.ClassMaulerHib ||
-			    (CharacterClass is PlayerClass.ClassWarden && spell.SpellType == "HealOverTime") ||
-			    (CharacterClass is PlayerClass.ClassFriar && spell.SpellType == "HealOverTime"))
-			{
+			if (spell == null || spell.IsInstantCast)
 				return true;
+
+			switch (CharacterClass)
+			{
+				case PlayerClass.ClassVampiir vampiir:
+				case PlayerClass.ClassMaulerAlb maulerAlb:
+				case PlayerClass.ClassMaulerMid maulerMid:
+				case PlayerClass.ClassMaulerHib maulerHib:
+					return true;
 			}
 
 			return false;
@@ -7956,8 +7989,16 @@ namespace DOL.GS
 			}
 		}
 
-		public override void CastSpell(Spell spell, SpellLine line)
+		/// <summary>
+		/// Cast a specific spell from given spell line
+		/// </summary>
+		/// <param name="spell">spell to cast</param>
+		/// <param name="line">Spell line of the spell (for bonus calculations)</param>
+		/// <returns>Whether the spellcast started successfully</returns>
+		public override bool CastSpell(Spell spell, SpellLine line)
 		{
+			bool casted = false;
+
 			if (IsCrafting)
 			{
                 Out.SendMessage(LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.Attack.InterruptedCrafting"), eChatType.CT_System, eChatLoc.CL_SystemWindow);
@@ -7984,7 +8025,7 @@ namespace DOL.GS
 				if (handler != null)
 				{
 					handler.Execute(ab, this);
-					return;
+					return true;
 				}
 			}
 			else
@@ -7992,18 +8033,18 @@ namespace DOL.GS
 				if (IsStunned)
 				{
 					Out.SendMessage(LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.CastSpell.CantCastStunned"), eChatType.CT_SpellResisted, eChatLoc.CL_SystemWindow);
-					return;
+					return false;
 				}
 				if (IsMezzed)
 				{
 					Out.SendMessage(LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.CastSpell.CantCastMezzed"), eChatType.CT_SpellResisted, eChatLoc.CL_SystemWindow);
-					return;
+					return false;
 				}
 
 				if (IsSilenced)
 				{
                     Out.SendMessage(LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.CastSpell.CantCastFumblingWords"), eChatType.CT_Spell, eChatLoc.CL_SystemWindow);
-					return;
+					return false;
 				}
 
 				double fumbleChance = GetModified(eProperty.SpellFumbleChance);
@@ -8013,7 +8054,7 @@ namespace DOL.GS
 					if (Util.ChanceDouble(fumbleChance))
 					{
                         Out.SendMessage(LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.CastSpell.CantCastFumblingWords"), eChatType.CT_Spell, eChatLoc.CL_SystemWindow);
-						return;
+						return false;
 					}
 				}
 
@@ -8024,7 +8065,7 @@ namespace DOL.GS
 						if (m_runningSpellHandler.CanQueue == false)
 						{
 							m_runningSpellHandler.CasterMoves();
-							return;
+							return false;
 						}
 
 						if (spell.CastTime > 0 && !(m_runningSpellHandler is ChamberSpellHandler) && spell.SpellType != "Chamber")
@@ -8032,7 +8073,7 @@ namespace DOL.GS
 							if (m_runningSpellHandler.Spell.InstrumentRequirement != 0)
 							{
 								Out.SendMessage(LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.CastSpell.AlreadyPlaySong"), eChatType.CT_SpellResisted, eChatLoc.CL_SystemWindow);
-								return;
+								return false;
 							}
 							if (SpellQueue)
 							{
@@ -8048,9 +8089,11 @@ namespace DOL.GS
 								m_nextSpell = spell;
 								m_nextSpellLine = line;
 								m_nextSpellTarget = TargetObject as GameLiving;
+								return true;
 							}
 							else Out.SendMessage(LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.CastSpell.AlreadyCastNoQueue"), eChatType.CT_SpellResisted, eChatLoc.CL_SystemWindow);
-							return;
+							
+							return false;
 						}
 						else if (m_runningSpellHandler is PrimerSpellHandler)
 						{
@@ -8069,6 +8112,7 @@ namespace DOL.GS
 										cloneSpell.CostPower = false;
 										m_nextSpell = cloneSpell;
 										m_nextSpellLine = line;
+										casted = true;
 									}
 									else if (m_runningSpellHandler is RangeSpellHandler)
 									{
@@ -8077,6 +8121,7 @@ namespace DOL.GS
 										cloneSpell.OverrideRange = m_runningSpellHandler.Spell.Range;
 										m_nextSpell = cloneSpell;
 										m_nextSpellLine = line;
+										casted = true;
 									}
 									else if (m_runningSpellHandler is UninterruptableSpellHandler)
 									{
@@ -8084,10 +8129,11 @@ namespace DOL.GS
 										cloneSpell.CostPower = false;
 										m_nextSpell = cloneSpell;
 										m_nextSpellLine = line;
+										casted = true;
 									}
                                     Out.SendMessage(LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.CastSpell.PrepareSecondarySpell"), eChatType.CT_SpellResisted, eChatLoc.CL_SystemWindow);
 								}
-								return;
+								return casted;
 							}
 						}
 						else if (m_runningSpellHandler is ChamberSpellHandler)
@@ -8096,14 +8142,14 @@ namespace DOL.GS
 							if (IsMoving || IsStrafing)
 							{
 								m_runningSpellHandler = null;
-								return;
+								return false;
 							}
 							if (spell.IsPrimary)
 							{
 								if (spell.SpellType == "Bolt" && !chamber.Spell.AllowBolt)
 								{
                                     Out.SendMessage(LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.CastSpell.SpellNotInChamber"), eChatType.CT_SpellResisted, eChatLoc.CL_SystemWindow);
-									return;
+									return false;
 								}
 								if (chamber.PrimarySpell == null)
 								{
@@ -8150,7 +8196,7 @@ namespace DOL.GS
 						else if (!(m_runningSpellHandler is ChamberSpellHandler) && spell.SpellType == "Chamber")
 						{
                             Out.SendMessage(LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.CastSpell.NotAFollowSpell"), eChatType.CT_SpellResisted, eChatLoc.CL_SystemWindow);
-							return;
+							return false;
 						}
 					}
 				}
@@ -8163,7 +8209,7 @@ namespace DOL.GS
 
 						if (effect != null && spell.Name == effect.Spell.Name)
 						{
-							spellhandler.CastSpell();
+							casted = spellhandler.CastSpell();
 						}
 						else
 						{
@@ -8172,13 +8218,13 @@ namespace DOL.GS
 								((ChamberSpellHandler)spellhandler).EffectSlot = ChamberSpellHandler.GetEffectSlot(spellhandler.Spell.Name);
 								m_runningSpellHandler = spellhandler;
 								m_runningSpellHandler.CastingCompleteEvent += new CastingCompleteCallback(OnAfterSpellCastSequence);
-								spellhandler.CastSpell();
+								casted = spellhandler.CastSpell();
 							}
 							else if (m_runningSpellHandler == null)
 							{
 								m_runningSpellHandler = spellhandler;
 								m_runningSpellHandler.CastingCompleteEvent += new CastingCompleteCallback(OnAfterSpellCastSequence);
-								spellhandler.CastSpell();
+								casted = spellhandler.CastSpell();
 							}
 						}
 					}
@@ -8206,6 +8252,7 @@ namespace DOL.GS
 											m_nextSpell = spell;
 											spell.OverrideRange = m_runningSpellHandler.Spell.Range;
 											m_nextSpellLine = line;
+											casted = true;
 										}
 									}
 								}
@@ -8221,7 +8268,7 @@ namespace DOL.GS
 									cloneSpell = spell.Copy();
 									cloneSpell.CostPower = false;
 									spellhandler = ScriptMgr.CreateSpellHandler(this, cloneSpell, line);
-									spellhandler.CastSpell();
+									casted = spellhandler.CastSpell();
 									effect.Cancel(false);
 								}
 								else if (effect.SpellHandler is RangeSpellHandler)
@@ -8230,7 +8277,7 @@ namespace DOL.GS
 									cloneSpell.CostPower = false;
 									cloneSpell.OverrideRange = effect.Spell.Range;
 									spellhandler = ScriptMgr.CreateSpellHandler(this, cloneSpell, line);
-									spellhandler.CastSpell();
+									casted = spellhandler.CastSpell();
 									effect.Cancel(false);
 								}
 								else if (effect.SpellHandler is UninterruptableSpellHandler)
@@ -8238,7 +8285,7 @@ namespace DOL.GS
 									cloneSpell = spell.Copy();
 									cloneSpell.CostPower = false;
 									spellhandler = ScriptMgr.CreateSpellHandler(this, cloneSpell, line);
-									spellhandler.CastSpell();
+									casted = spellhandler.CastSpell();
 									effect.Cancel(false);
 								}
 							}
@@ -8250,14 +8297,16 @@ namespace DOL.GS
 				else
 				{
 					Out.SendMessage(spell.Name + " not implemented yet (" + spell.SpellType + ")", eChatType.CT_System, eChatLoc.CL_SystemWindow);
-					return;
+					return false;
 				}
 			}
-			return;
+			return casted;
 		}
 
-		public override void CastSpell(ISpellCastingAbilityHandler ab)
+		public override bool CastSpell(ISpellCastingAbilityHandler ab)
 		{
+			bool casted = false;
+
 			if (IsCrafting)
 			{
                 Out.SendMessage(LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.Attack.InterruptedCrafting"), eChatType.CT_System, eChatLoc.CL_SystemWindow);
@@ -8277,12 +8326,14 @@ namespace DOL.GS
 				}
 
 				spellhandler.Ability = ab;
-				spellhandler.CastSpell();
+				casted = spellhandler.CastSpell();
 			}
 			else
 			{
 				Out.SendMessage(ab.Spell.Name + " not implemented yet (" + ab.Spell.SpellType + ")", eChatType.CT_System, eChatLoc.CL_SystemWindow);
 			}
+
+			return casted;
 		}
 
 		/// <summary>
@@ -11167,6 +11218,15 @@ namespace DOL.GS
 			Out.SendEncumberance();
 		}
 
+		public override void UpdateHealthManaEndu()
+		{
+			Out.SendCharStatsUpdate();
+			Out.SendUpdateWeaponAndArmorStats();
+			UpdateEncumberance();
+			UpdatePlayerStatus();
+			base.UpdateHealthManaEndu();
+		}
+
 		/// <summary>
 		/// Get the bonus names
 		/// </summary>
@@ -12194,7 +12254,7 @@ namespace DOL.GS
 			string tmpStr = character.SerializedSpecs;
 			if (tmpStr != null && tmpStr.Length > 0)
 			{
-				foreach (string spec in tmpStr.SplitCSV())
+				foreach (string spec in Util.SplitCSV(tmpStr))
 				{
 					string[] values = spec.Split('|');
 					if (values.Length >= 2)
@@ -12237,7 +12297,7 @@ namespace DOL.GS
 			tmpStr = character.SerializedAbilities;
 			if (tmpStr != null && tmpStr.Length > 0 && m_usableSkills.Count == 0)
 			{
-				foreach (string abilities in tmpStr.SplitCSV())
+				foreach (string abilities in Util.SplitCSV(tmpStr))
 				{
 					string[] values = abilities.Split('|');
 					if (values.Length >= 2)
@@ -12260,7 +12320,7 @@ namespace DOL.GS
 			tmpStr = character.SerializedRealmAbilities;
 			if (tmpStr != null && tmpStr.Length > 0)
 			{
-				foreach (string abilities in tmpStr.SplitCSV())
+				foreach (string abilities in Util.SplitCSV(tmpStr))
 				{
 					string[] values = abilities.Split('|');
 					if (values.Length >= 2)
@@ -12289,7 +12349,7 @@ namespace DOL.GS
 			tmpStr = character.DisabledAbilities;
 			if (tmpStr != null && tmpStr.Length > 0)
 			{
-				foreach (string str in tmpStr.SplitCSV())
+				foreach (string str in Util.SplitCSV(tmpStr))
 				{
 					string[] values = str.Split('|');
 					if (values.Length >= 2)
@@ -12314,7 +12374,7 @@ namespace DOL.GS
 			tmpStr = character.DisabledSpells;
 			if (!string.IsNullOrEmpty(tmpStr))
 			{
-				foreach (string str in tmpStr.SplitCSV())
+				foreach (string str in Util.SplitCSV(tmpStr))
 				{
 					string[] values = str.Split('|');
 					int spellid;
@@ -13335,7 +13395,7 @@ namespace DOL.GS
 		/// <summary>
 		/// Gets the questlist of this player
 		/// </summary>
-		public List<AbstractQuest> QuestList
+		public virtual List<AbstractQuest> QuestList
 		{
 			get { return m_questList; }
 		}
@@ -13343,7 +13403,7 @@ namespace DOL.GS
 		/// <summary>
 		/// Gets the finished quests of this player
 		/// </summary>
-		public List<AbstractQuest> QuestListFinished
+		public virtual List<AbstractQuest> QuestListFinished
 		{
 			get { return m_questListFinished; }
 		}
@@ -13804,7 +13864,7 @@ namespace DOL.GS
 
 				lock (CraftingLock)
 				{
-					foreach (string skill in DBCharacter.SerializedCraftingSkills.SplitCSV())
+					foreach (string skill in Util.SplitCSV(DBCharacter.SerializedCraftingSkills))
 					{
 						string[] values = skill.Split('|');
 						//Load by crafting skill name
@@ -14378,13 +14438,16 @@ namespace DOL.GS
 		/// <returns>true if invulnerability was set (smaller than old invulnerability)</returns>
 		public virtual bool StartInvulnerabilityTimer(int duration, InvulnerabilityExpiredCallback callback)
 		{
+			if (GameServer.Instance.Configuration.ServerType == eGameServerType.GST_PvE)
+				return false;
+
 			if (duration < 1)
-            		{
-                		//throw new ArgumentOutOfRangeException("duration", duration, "Immunity duration cannot be less than 1ms"); This causes problems down the road, just log it instead.
-                		if (log.IsWarnEnabled)
-                    			log.Warn("GamePlayer.StartInvulnerabilityTimer(): Immunity duration cannot be less than 1ms");
-                		return false;
-            		}
+            {
+                //throw new ArgumentOutOfRangeException("duration", duration, "Immunity duration cannot be less than 1ms"); This causes problems down the road, just log it instead.
+                if (log.IsWarnEnabled)
+                    	log.Warn("GamePlayer.StartInvulnerabilityTimer(): Immunity duration cannot be less than 1ms");
+                return false;
+            }
 
 			long newTick = CurrentRegion.Time + duration;
 			if (newTick < m_invulnerabilityTick)

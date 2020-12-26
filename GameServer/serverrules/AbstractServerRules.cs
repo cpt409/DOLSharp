@@ -676,7 +676,7 @@ namespace DOL.GS.ServerRules
 			// classes restriction. 0 means every class
 			if (player != null && !Util.IsEmpty(item.AllowedClasses, true))
 			{
-				if (!item.AllowedClasses.SplitCSV(true).Contains(player.CharacterClass.ID.ToString()))
+				if (!Util.SplitCSV(item.AllowedClasses, true).Contains(player.CharacterClass.ID.ToString()))
 					return false;
 			}
 
@@ -1146,7 +1146,7 @@ namespace DOL.GS.ServerRules
 						}
 					}
 
-					if (realmPoints > rpCap)
+					if (realmPoints > rpCap && !(killedNPC is Doppelganger))
 						realmPoints = rpCap;
 
 					if (realmPoints > 0)
@@ -1171,7 +1171,7 @@ namespace DOL.GS.ServerRules
 						bountyPoints = (int)(npcBPValue * damagePercent);
 					}
 
-					if (bountyPoints > bpCap)
+					if (bountyPoints > bpCap && !(killedNPC is Doppelganger))
 						bountyPoints = bpCap;
 					if (bountyPoints > 0)
 						living.GainBountyPoints(bountyPoints);

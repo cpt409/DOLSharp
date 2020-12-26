@@ -344,7 +344,7 @@ namespace DOL.GS
 			var mobList = new List<Mob>();
 			if (ServerProperties.Properties.DEBUG_LOAD_REGIONS != string.Empty)
 			{
-				foreach (string loadRegion in ServerProperties.Properties.DEBUG_LOAD_REGIONS.SplitCSV(true))
+				foreach (string loadRegion in Util.SplitCSV(ServerProperties.Properties.DEBUG_LOAD_REGIONS, true))
 				{
 					mobList.AddRange(GameServer.Database.SelectObjects<Mob>("`Region` = @Region", new QueryParameter("@Region", loadRegion)));
 				}
@@ -1174,9 +1174,9 @@ namespace DOL.GS
 		/// </summary>
 		/// <param name="id">ID to search</param>
 		/// <returns>The found GameClient or null if not found</returns>
-		public static GameClient GetClientFromID(int id)
+		public static GameClient GetClientFromID(uint id)
 		{
-			int i = id;
+			var i = id;
 			if (i <= 0 || i > m_clients.Length)
 				return null;
 			return m_clients[i - 1];

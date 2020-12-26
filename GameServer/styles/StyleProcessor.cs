@@ -634,9 +634,9 @@ namespace DOL.GS.Styles
 				{
 					// We have to scale style procs when cast
 					if (caster is GamePet pet)
-						styleSpell = pet.ScalePetSpell(spell);
-					else
-						styleSpell = spell;
+						pet.ScalePetSpell(spell);
+
+					styleSpell = spell;
 					break;
 				}
 			}
@@ -912,7 +912,7 @@ namespace DOL.GS.Styles
 								temp += spell.Name;
 								delveInfo.Add(temp);
 								delveInfo.Add(" ");//empty line
-								delveInfo.AddRange(spellHandler.DelveInfo);
+								Util.AddRange(delveInfo, spellHandler.DelveInfo);
 							}
 						}
 					}

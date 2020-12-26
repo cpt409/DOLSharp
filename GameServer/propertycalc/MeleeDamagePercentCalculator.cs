@@ -20,29 +20,25 @@ using System;
 
 namespace DOL.GS.PropertyCalc
 {
-	/// <summary>
-	/// The melee damage bonus percent calculator
-	///
-	/// BuffBonusCategory1 is used for buffs
-	/// BuffBonusCategory2 unused
-	/// BuffBonusCategory3 is used for debuff
-	/// BuffBonusCategory4 unused
-	/// BuffBonusMultCategory1 unused
-	/// </summary>
 	[PropertyCalculator(eProperty.MeleeDamage)]
 	public class MeleeDamagePercentCalculator : PropertyCalculator
 	{
 		public override int CalcValue(GameLiving living, eProperty property)
 		{
-			//hardcap at 10%
-			int itemPercent = Math.Min(10, living.ItemBonus[(int)property]);
-			int debuffPercent = Math.Min(10, living.DebuffCategory[(int)property]);
-			int percent = living.BaseBuffBonusCategory[(int)property] + living.SpecBuffBonusCategory[(int)property] + itemPercent - debuffPercent;
+			if (living is GameNPC)
+			{
+				int strengthPerMeleeDamagePercent = 8;
+				var strengthBuffBonus = living.BaseBuffBonusCategory[eProperty.Strength] + living.SpecBuffBonusCategory[eProperty.Strength];
+				var strengthDebuffMalus = living.DebuffCategory[eProperty.Strength] + living.SpecDebuffCategory[eProperty.Strength];
+				return living.AbilityBonus[property] + (strengthBuffBonus - strengthDebuffMalus) / strengthPerMeleeDamagePercent;
+			}
 
-			// Apply RA bonus
-			percent += living.AbilityBonus[(int)property];
-
-			return percent;
+			int hardCap = 10;
+			int abilityBonus = living.AbilityBonus[(int)property];
+			int itemBonus = Math.Min(hardCap, living.ItemBonus[(int)property]);
+			int buffBonus = living.BaseBuffBonusCategory[(int)property] + living.SpecBuffBonusCategory[(int)property];
+			int debuffMalus = Math.Min(hardCap, Math.Abs(living.DebuffCategory[(int)property]));
+			return abilityBonus + buffBonus + itemBonus - debuffMalus;
 		}
 	}
 }

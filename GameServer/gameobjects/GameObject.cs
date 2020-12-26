@@ -82,7 +82,7 @@ namespace DOL.GS
 		/// Returns the current state of the object.
 		/// Object's with state "Deleted" should not be used!
 		/// </summary>
-		public eObjectState ObjectState
+		public virtual eObjectState ObjectState
 		{
 			get { return m_ObjectState; }
 			set
@@ -437,7 +437,7 @@ namespace DOL.GS
 		/// <summary>
 		/// The level of the Object
 		/// </summary>
-		protected byte m_level;
+		protected byte m_level = 0; // Default to 0 to force AutoSetStats() to be called when level set
 
 		/// <summary>
 		/// The name of the Object
@@ -1197,7 +1197,7 @@ namespace DOL.GS
 		/// </summary>
 		/// <param name="radiusToCheck">the radius to check</param>
 		/// <returns>An enumerator</returns>
-		public IEnumerable GetPlayersInRadius(ushort radiusToCheck)
+		public virtual IEnumerable GetPlayersInRadius(ushort radiusToCheck)
 		{
 			return GetPlayersInRadius(false, radiusToCheck, false, false);
 		}

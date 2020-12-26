@@ -36,8 +36,6 @@ namespace DOL.GS.PacketHandler.Client.v168
 		private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 		private int _position;
 
-		#region IPacketHandler Members
-
 		public void HandlePacket(GameClient client, GSPacketIn packet)
 		{
 			try
@@ -385,6 +383,7 @@ namespace DOL.GS.PacketHandler.Client.v168
 											{
 												Model = orgitem.Model,
 												Color = orgitem.Color,
+												Emblem = orgitem.Emblem,
 												X = xpos,
 												Y = ypos,
 												Size = orgitem.DPS_AF > 3 ? orgitem.DPS_AF : 100, // max size is 255
@@ -771,8 +770,6 @@ namespace DOL.GS.PacketHandler.Client.v168
 				client.Out.SendInventorySlotsUpdate(null);
 			}
 		}
-
-		#endregion
 
 		private static bool IsSuitableForWall(InventoryItem item)
 		{

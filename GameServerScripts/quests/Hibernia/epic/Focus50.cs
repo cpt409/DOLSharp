@@ -114,7 +114,15 @@ namespace DOL.GS.Quests.Hibernia
 
 			GameNPC[] npcs = WorldMgr.GetNPCsByName("Ainrebh", eRealm.Hibernia);
 
-			if (npcs.Length == 0)
+			if (npcs.Length > 0)
+				foreach (GameNPC npc in npcs)
+					if (npc.CurrentRegionID == 200 && npc.X == 421281 && npc.Y == 516273)
+					{
+						Ainrebh = npc;
+						break;
+					}
+
+			if (Ainrebh == null)
 			{
 				if (log.IsWarnEnabled)
 					log.Warn("Could not find Ainrebh , creating it ...");
@@ -135,15 +143,20 @@ namespace DOL.GS.Quests.Hibernia
 				{
 					Ainrebh.SaveIntoDatabase();
 				}
-
 			}
-			else
-				Ainrebh = npcs[0];
 			// end npc
 
 			npcs = WorldMgr.GetNPCsByName("Green Maw", eRealm.None);
 
-			if (npcs.Length == 0)
+			if (npcs.Length > 0)
+				foreach (GameNPC npc in npcs)
+					if (npc.CurrentRegionID == 200 && npc.X == 488306 && npc.Y == 521440)
+					{
+						GreenMaw = npc;
+						break;
+					}
+
+			if (GreenMaw == null)
 			{
 				if (log.IsWarnEnabled)
 					log.Warn("Could not find GreenMaw , creating it ...");
@@ -164,10 +177,7 @@ namespace DOL.GS.Quests.Hibernia
 				{
 					GreenMaw.SaveIntoDatabase();
 				}
-
 			}
-			else
-				GreenMaw = npcs[0];
 			// end npc
 
 			#endregion
@@ -1287,8 +1297,17 @@ namespace DOL.GS.Quests.Hibernia
 			if (player == null)
 				return;
 
-			if(Ainrebh.CanGiveQuest(typeof (Focus_50), player)  <= 0)
+			if (Ainrebh.CanGiveQuest(typeof (Focus_50), player)  <= 0)
 				return;
+
+			// player is not allowed to start this quest until the quest rewards are available
+			if (player.CharacterClass.ID == (byte)eCharacterClass.MaulerHib &&
+				(MaulerHibEpicBoots == null || MaulerHibEpicBoots == null || MaulerHibEpicGloves == null ||
+				MaulerHibEpicHelm == null || MaulerHibEpicLegs == null || MaulerHibEpicVest == null))
+			{
+				Ainrebh.SayTo(player, "This quest is not available to Maulers yet.");
+				return;
+			}
 
 			//We also check if the player is already doing the quest
 			Focus_50 quest = player.IsDoingQuest(typeof (Focus_50)) as Focus_50;
@@ -1462,17 +1481,6 @@ namespace DOL.GS.Quests.Hibernia
 
 			if (Step == 2 && e == GamePlayerEvent.GiveItem)
             {
-                // Graveen: if not existing maulerepic in DB
-                // player is not allowed to finish this quest until we fix this problem
-//                if (MaulerHibEpicArms == null || MaulerHibEpicBoots == null || MaulerHibEpicGloves == null ||
-//                    MaulerHibEpicHelm == null || MaulerHibEpicLegs == null || MaulerHibEpicVest == null)
-                if (MaulerHibEpicArms == null || MaulerHibEpicBoots == null || MaulerHibEpicGloves == null ||
-                    MaulerHibEpicHelm == null || MaulerHibEpicLegs == null || MaulerHibEpicVest == null)
-                    {
-                    Ainrebh.SayTo(player, "Dark forces are still voiding this quest, your armor is not ready.");
-                    return;
-                }
-
 				GiveItemEventArgs gArgs = (GiveItemEventArgs) args;
 				if (gArgs.Target.Name == Ainrebh.Name && gArgs.Item.Id_nb == GreenMaw_key.Id_nb)
 				{

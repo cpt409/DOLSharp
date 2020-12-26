@@ -1010,14 +1010,15 @@ namespace DOL.GS
 		Labyrinth = 6
 	}
 
-    public enum eQuestIndicator : byte
-    {
-        None = 0x00,
-        Available = 0x01,
-        Finish = 0x02,
-        Lesson = 0x04,
-        Lore = 0x08,
-    }
+	public enum eQuestIndicator : byte
+	{
+		None = 0x00,
+		Available = 0x01,
+		Finish = 0x02,
+		Lesson = 0x04,
+		Lore = 0x08,
+		Pending = 0x10, // patch 0031
+	}
 
 	/// <summary>
 	/// strong name constants of spell line used in the world (poison, proc ect ...)
@@ -1064,7 +1065,7 @@ namespace DOL.GS
 		public static bool IsExpansionEnabled(int expansion)
 		{
 			bool enabled = true;
-			foreach (string ex in ServerProperties.Properties.DISABLED_EXPANSIONS.SplitCSV(true))
+			foreach (string ex in Util.SplitCSV(ServerProperties.Properties.DISABLED_EXPANSIONS, true))
 			{
 				int exNum = 0;
 				if (int.TryParse(ex, out exNum))
@@ -2317,7 +2318,8 @@ namespace DOL.GS
 					"Dragon Knight",
 					"Lord",
 					"Baronet",
-					"Baron"
+					"Baron",
+					"Arch Duke"
 				}
 				,
 				// Female
@@ -2334,7 +2336,8 @@ namespace DOL.GS
 					"Dragon Knight",
 					"Lady",
 					"Baronetess",
-					"Baroness"
+					"Baroness",
+					"Arch Duchess",
 				}
 			}
 			,
@@ -2354,7 +2357,8 @@ namespace DOL.GS
 					"Einherjar",
 					"Herra",
 					"Hersir",
-					"Vicomte"
+					"Vicomte",
+					"Stor Jarl"
 				}
 				,
 				// Female
@@ -2371,7 +2375,8 @@ namespace DOL.GS
 					"Einherjar",
 					"Fru",
 					"Baronsfru",
-					"Vicomtessa"
+					"Vicomtessa",
+					"Stor Hurfru",
 				}
 			}
 			,
@@ -2391,7 +2396,8 @@ namespace DOL.GS
 					"Emerald Ridere",
 					"Barun",
 					"Ard Tiarna",
-					"Ciann Cath"
+					"Ciann Cath",
+					"Ard Diuc"
 				}
 				,
 				// Female
@@ -2408,7 +2414,8 @@ namespace DOL.GS
 					"Emerald Ridere",
 					"Banbharun",
 					"Ard Bantiarna",
-					"Ciann Cath"
+					"Ciann Cath",
+					"Ard Bandiuc"
 				}
 			}
 		};

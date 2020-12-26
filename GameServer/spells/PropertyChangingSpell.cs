@@ -144,7 +144,7 @@ namespace DOL.GS.Spells
 					}
 				}
 			}
-			
+
 			base.ApplyEffectOnTarget(target, effectiveness);
 		}
 
@@ -154,17 +154,17 @@ namespace DOL.GS.Spells
 		/// <param name="effect"></param>
 		public override void OnEffectStart(GameSpellEffect effect)
 		{
-			ApplyBonus(effect.Owner , BonusCategory1, Property1, (int) (Spell.Value*effect.Effectiveness), false);
-			ApplyBonus(effect.Owner , BonusCategory2, Property2, (int) (Spell.Value*effect.Effectiveness), false);
-			ApplyBonus(effect.Owner , BonusCategory3, Property3, (int) (Spell.Value*effect.Effectiveness), false);
-			ApplyBonus(effect.Owner , BonusCategory4, Property4, (int) (Spell.Value*effect.Effectiveness), false);
-			ApplyBonus(effect.Owner , BonusCategory5, Property5, (int) (Spell.Value*effect.Effectiveness), false);
-			ApplyBonus(effect.Owner , BonusCategory6, Property6, (int) (Spell.Value*effect.Effectiveness), false);
+			ApplyBonus(effect.Owner, BonusCategory1, Property1, (int)(Spell.Value * effect.Effectiveness), false);
+			ApplyBonus(effect.Owner, BonusCategory2, Property2, (int)(Spell.Value * effect.Effectiveness), false);
+			ApplyBonus(effect.Owner, BonusCategory3, Property3, (int)(Spell.Value * effect.Effectiveness), false);
+			ApplyBonus(effect.Owner, BonusCategory4, Property4, (int)(Spell.Value * effect.Effectiveness), false);
+			ApplyBonus(effect.Owner, BonusCategory5, Property5, (int)(Spell.Value * effect.Effectiveness), false);
+			ApplyBonus(effect.Owner, BonusCategory6, Property6, (int)(Spell.Value * effect.Effectiveness), false);
 			ApplyBonus(effect.Owner, BonusCategory7, Property7, (int)(Spell.Value * effect.Effectiveness), false);
 			ApplyBonus(effect.Owner, BonusCategory8, Property8, (int)(Spell.Value * effect.Effectiveness), false);
 			ApplyBonus(effect.Owner, BonusCategory9, Property9, (int)(Spell.Value * effect.Effectiveness), false);
 			ApplyBonus(effect.Owner, BonusCategory10, Property10, (int)(Spell.Value * effect.Effectiveness), false);
-			
+
 			SendUpdates(effect.Owner);
 
 			eChatType toLiving = eChatType.CT_SpellPulse;
@@ -188,14 +188,14 @@ namespace DOL.GS.Spells
 				// Controlled NPC. Show message in blue writing to owner...
 
 				MessageToLiving(player, String.Format(Spell.Message2,
-				                                      effect.Owner.GetName(0, true)), toLiving);
+													  effect.Owner.GetName(0, true)), toLiving);
 
 				// ...and in white writing for everyone else.
 
 				foreach (GamePlayer gamePlayer in effect.Owner.GetPlayersInRadius(WorldMgr.INFO_DISTANCE))
 					if (gamePlayer != player)
 						MessageToLiving(gamePlayer, String.Format(Spell.Message2,
-						                                          effect.Owner.GetName(0, true)), toOther);
+																  effect.Owner.GetName(0, true)), toOther);
 			}
 			else
 			{
@@ -207,7 +207,7 @@ namespace DOL.GS.Spells
 				m_buffCheckAction = new BuffCheckAction(effect.SpellHandler.Caster, effect.Owner, effect);
 				m_buffCheckAction.Start(BuffCheckAction.BUFFCHECKINTERVAL);
 			}
-			
+
 		}
 
 		BuffCheckAction m_buffCheckAction = null;
@@ -226,17 +226,18 @@ namespace DOL.GS.Spells
 				MessageToLiving(effect.Owner, Spell.Message3, eChatType.CT_SpellExpires);
 				Message.SystemToArea(effect.Owner, Util.MakeSentence(Spell.Message4, effect.Owner.GetName(0, false)), eChatType.CT_SpellExpires, effect.Owner);
 			}
-			
-			ApplyBonus(effect.Owner , BonusCategory1, Property1, (int) (Spell.Value*effect.Effectiveness), true);
-			ApplyBonus(effect.Owner , BonusCategory2, Property2, (int) (Spell.Value*effect.Effectiveness), true);
-			ApplyBonus(effect.Owner , BonusCategory3, Property3, (int) (Spell.Value*effect.Effectiveness), true);
-			ApplyBonus(effect.Owner , BonusCategory4, Property4, (int) (Spell.Value*effect.Effectiveness), true);
-			ApplyBonus(effect.Owner , BonusCategory5, Property5, (int) (Spell.Value*effect.Effectiveness), true);
-			ApplyBonus(effect.Owner , BonusCategory6, Property6, (int) (Spell.Value*effect.Effectiveness), true);
+
+			ApplyBonus(effect.Owner, BonusCategory1, Property1, (int)(Spell.Value * effect.Effectiveness), true);
+			ApplyBonus(effect.Owner, BonusCategory2, Property2, (int)(Spell.Value * effect.Effectiveness), true);
+			ApplyBonus(effect.Owner, BonusCategory3, Property3, (int)(Spell.Value * effect.Effectiveness), true);
+			ApplyBonus(effect.Owner, BonusCategory4, Property4, (int)(Spell.Value * effect.Effectiveness), true);
+			ApplyBonus(effect.Owner, BonusCategory5, Property5, (int)(Spell.Value * effect.Effectiveness), true);
+			ApplyBonus(effect.Owner, BonusCategory6, Property6, (int)(Spell.Value * effect.Effectiveness), true);
 			ApplyBonus(effect.Owner, BonusCategory7, Property7, (int)(Spell.Value * effect.Effectiveness), true);
 			ApplyBonus(effect.Owner, BonusCategory8, Property8, (int)(Spell.Value * effect.Effectiveness), true);
 			ApplyBonus(effect.Owner, BonusCategory9, Property9, (int)(Spell.Value * effect.Effectiveness), true);
 			ApplyBonus(effect.Owner, BonusCategory10, Property10, (int)(Spell.Value * effect.Effectiveness), true);
+
 
 			SendUpdates(effect.Owner);
 
@@ -442,16 +443,17 @@ namespace DOL.GS.Spells
 
 		public override void OnEffectRestored(GameSpellEffect effect, int[] vars)
 		{
-			ApplyBonus (effect.Owner, BonusCategory1,Property1, vars[1], false);
-			ApplyBonus (effect.Owner, BonusCategory2,Property2, vars[1], false);
-			ApplyBonus (effect.Owner, BonusCategory3,Property3, vars[1], false);
-			ApplyBonus (effect.Owner, BonusCategory4,Property4, vars[1], false);
-			ApplyBonus (effect.Owner, BonusCategory5,Property5, vars[1], false);
-			ApplyBonus (effect.Owner, BonusCategory6,Property6, vars[1], false);
+			ApplyBonus(effect.Owner, BonusCategory1, Property1, vars[1], false);
+			ApplyBonus(effect.Owner, BonusCategory2, Property2, vars[1], false);
+			ApplyBonus(effect.Owner, BonusCategory3, Property3, vars[1], false);
+			ApplyBonus(effect.Owner, BonusCategory4, Property4, vars[1], false);
+			ApplyBonus(effect.Owner, BonusCategory5, Property5, vars[1], false);
+			ApplyBonus(effect.Owner, BonusCategory6, Property6, vars[1], false);
 			ApplyBonus(effect.Owner, BonusCategory7, Property7, vars[1], false);
 			ApplyBonus(effect.Owner, BonusCategory8, Property8, vars[1], false);
 			ApplyBonus(effect.Owner, BonusCategory9, Property9, vars[1], false);
 			ApplyBonus(effect.Owner, BonusCategory10, Property10, vars[1], false);
+
 
 			SendUpdates(effect.Owner);
 		}
@@ -464,16 +466,17 @@ namespace DOL.GS.Spells
 				Message.SystemToArea(effect.Owner, Util.MakeSentence(Spell.Message4, effect.Owner.GetName(0, false)), eChatType.CT_SpellExpires, effect.Owner);
 			}
 
-			ApplyBonus (effect.Owner, BonusCategory1,Property1, vars[1], true);
-			ApplyBonus (effect.Owner, BonusCategory2,Property2, vars[1], true);
-			ApplyBonus (effect.Owner, BonusCategory3,Property3, vars[1], true);
-			ApplyBonus (effect.Owner, BonusCategory4,Property4, vars[1], true);
-			ApplyBonus (effect.Owner, BonusCategory5,Property5, vars[1], true);
-			ApplyBonus (effect.Owner, BonusCategory6,Property6, vars[1], true);
+			ApplyBonus(effect.Owner, BonusCategory1, Property1, vars[1], true);
+			ApplyBonus(effect.Owner, BonusCategory2, Property2, vars[1], true);
+			ApplyBonus(effect.Owner, BonusCategory3, Property3, vars[1], true);
+			ApplyBonus(effect.Owner, BonusCategory4, Property4, vars[1], true);
+			ApplyBonus(effect.Owner, BonusCategory5, Property5, vars[1], true);
+			ApplyBonus(effect.Owner, BonusCategory6, Property6, vars[1], true);
 			ApplyBonus(effect.Owner, BonusCategory7, Property7, vars[1], true);
 			ApplyBonus(effect.Owner, BonusCategory8, Property8, vars[1], true);
 			ApplyBonus(effect.Owner, BonusCategory9, Property9, vars[1], true);
 			ApplyBonus(effect.Owner, BonusCategory10, Property10, vars[1], true);
+
 
 			SendUpdates(effect.Owner);
 			return 0;

@@ -27,8 +27,6 @@ namespace DOL.GS.PacketHandler.Client.v168
 	[PacketHandlerAttribute(PacketHandlerType.TCP, eClientPackets.PlayerTarget, "Handle Player Target Change.", eClientStatus.PlayerInGame)]
 	public class PlayerTargetHandler : IPacketHandler
 	{
-		#region IPacketHandler Members
-
 		/// <summary>
 		/// Handles every received packet
 		/// </summary>
@@ -50,10 +48,6 @@ namespace DOL.GS.PacketHandler.Client.v168
 			new ChangeTargetAction(client.Player, targetID, (flags & (0x4000 | 0x2000)) != 0, (flags & 0x8000) != 0).Start(1);
 		}
 
-		#endregion
-
-		#region Nested type: ChangeTargetAction
-
 		/// <summary>
 		/// Changes players target
 		/// </summary>
@@ -67,7 +61,7 @@ namespace DOL.GS.PacketHandler.Client.v168
 			/// <summary>
 			/// The new target OID
 			/// </summary>
-			protected readonly int m_newTargetId;
+			protected readonly ushort m_newTargetId;
 
 			/// <summary>
 			/// The 'target in view' flag
@@ -81,7 +75,7 @@ namespace DOL.GS.PacketHandler.Client.v168
 			/// <param name="newTargetId">The new target OID</param>
 			/// <param name="targetInView">The target LOS bit</param>
 			/// <param name="examineTarget">The 'examine target' bit</param>
-			public ChangeTargetAction(GamePlayer actionSource, int newTargetId, bool targetInView, bool examineTarget)
+			public ChangeTargetAction(GamePlayer actionSource, ushort newTargetId, bool targetInView, bool examineTarget)
 				: base(actionSource)
 			{
 				m_newTargetId = newTargetId;
@@ -97,6 +91,11 @@ namespace DOL.GS.PacketHandler.Client.v168
 				var player = (GamePlayer) m_actionSource;
 
 				GameObject myTarget = player.CurrentRegion.GetObject((ushort) m_newTargetId);
+				if (myTarget != null && !player.IsWithinRadius(myTarget, WorldMgr.OBJ_UPDATE_DISTANCE))
+				{
+					player.Out.SendObjectDelete(m_newTargetId);
+					myTarget = null;
+				}
 				player.TargetObject = myTarget;
 				player.TargetInView = m_targetInView;
 
@@ -126,8 +125,7 @@ namespace DOL.GS.PacketHandler.Client.v168
 					var gravestone = myTarget as GameGravestone;
 					if (gravestone == null || !gravestone.InternalID.Equals(player.InternalID))
 					{
-						player.Out.SendMessage("You are no longer targetting your grave. Your prayers fail.", eChatType.CT_System,
-						                       eChatLoc.CL_SystemWindow);
+						player.Out.SendMessage("You are no longer targetting your grave. Your prayers fail.", eChatType.CT_System, eChatLoc.CL_SystemWindow);
 						player.PrayTimerStop();
 					}
 				}
@@ -135,7 +133,5 @@ namespace DOL.GS.PacketHandler.Client.v168
 				GameEventMgr.Notify(GamePlayerEvent.ChangeTarget, player, null);
 			}
 		}
-
-		#endregion
 	}
 }
